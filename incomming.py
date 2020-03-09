@@ -15,6 +15,7 @@ firebase = firebase.FirebaseApplication("https://fastgate-d2d06.firebaseio.com/"
 
 frame = []
 uid = ""
+data = {}
 
 def search():
     global uid
@@ -130,7 +131,7 @@ def capture():
         t1.insert(0,regex)
 
 def save():
-    global uid
+    global uid,data
 
     vehicle = t1.get()
     oname = t2.get()
@@ -146,15 +147,17 @@ def save():
         'vehicle': vehicle,
         'date': date,
         'time': time,
-        'type': ty
+        'type': ty,
+        'permission': "None"
     }
 
 
 
 
     try:
-        code = firebase.post('USER/'+uid, data)
-        code = code['name']
+        # code = firebase.post('USER/'+uid+'/incomming', data)
+        code = firebase.put('USER/'+uid, 'request', data)
+
 
         conn = pymysql.connect(host="127.0.0.1", user="root", passwd='', db='license')
         mycursor = conn.cursor()
@@ -163,12 +166,34 @@ def save():
         mycursor.execute(url)
         conn.commit()
         print("Successful")
-        msg(vehicle,mob,date,time,ty)
+        # msg(vehicle,mob,date,time,ty)
+
+        t1.delete(0,END)
+        t2.delete(0,END)
+        t3.delete(0,END)
+        t4.delete(0,END)
+        t5.delete(0,END)
+        t6.delete(0,END)
+        t7.delete(0,END)
+        type.set("")
+
     except Exception as e:
         messagebox.showinfo(title="Error", message="Try Again")
         print(e)
     finally:
         conn.close()
+
+def refresh():
+    global data
+    pth = "/USER/"+uid+"/request"
+    # '/USER/jO558PE7qzMdKsTAZUa85qRTCKD2/request'
+    res = firebase.get(pth, None)
+    per = res['permission']
+    t11.delete(0,END)
+    t11.insert(0 , per)
+    if(per == "Yes"):
+        print(data)
+        firebase.post('USER/'+uid+'/incomming', data)
 
 def msg(v,m,d,t,ty):
     url = "https://www.fast2sms.com/dev/bulk"
@@ -218,13 +243,20 @@ t7.grid(row=7 , column= 1)
 
 Label(window , text = "Entry  Type" , font=("monospaced ",15), bg="White" ,fg="Black").grid(row=8 ,column=0)
 type = ttk.Combobox(window , font=("monospaced" , 20))
-type["values"] = ("Visitor" , "Zomato" , "Swiggy" , "Uber" , "Ola" , "Other")
+type["values"] = ("Visitor","Zomato","Swiggy","Uber","Ola","Rapido","Amazon","Flipkart","Snapdeal", "Other")
 type.current(0)
 type.grid(row=8 , column= 1)
 
 b1 =Button(window , text="Search" , font=("monospaced" , 15) , command = search).grid(row=2, column=2 )
 b2 =Button(window , text="Save" , font=("monospaced" , 20) , command = save).grid(row=9, column=0 , columnspan = 2 )
 ex =Button(window , text="Exit" , font=("monospaced" , 20) , command = exit).grid(row=10, column=0 , columnspan = 2 )
+
+Label(window , text = "Permmission" , font=("monospaced ",15), bg="White" ,fg="Black").grid(row=11 ,column=0)
+t11 = Entry(window , width=15 ,font=("Arial Bold" , 20) )
+t11.grid(row=11 , column= 1)
+b3 =Button(window , text="Refresh" , font=("monospaced" , 15) , command = refresh).grid(row=11, column=2 )
+
+
 
 # capture =Button(window , text="Capture" , font=("monospaced" , 15) , command = capture).grid(row=1, column=2)
 
